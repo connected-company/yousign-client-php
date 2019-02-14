@@ -33,13 +33,20 @@ class ClientFactory
      */
     public function createClient($options = array())
     {
-        $client = (new GuzzleClient([
-            'base_uri' => $environment->getHost(),
+        $client = new Client();
+
+        $guzzleClient = new GuzzleClient([
+            'base_uri' => $this->environment->getHost(),
             'timeout' => 2.0,
-        ]))->setDefaultOption('headers', [
-            'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . $this->authentication->getToken(),
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $this->authentication->getToken(),
+            ]
         ]);
+
+        $client->setRestClient($guzzleClient);
+        $client->setUri($this->environment->getHost());
+        $client->setAppUri($this->environment->getAppHost());
 
         return $client;
     }

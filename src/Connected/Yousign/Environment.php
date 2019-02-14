@@ -14,9 +14,14 @@ class Environment
         self::PROD,
     ];
 
-    const HOST_MAPPING = [
+    const HOST_MAPPING_API = [
         self::DEMO => 'https://staging-api.yousign.com',
         self::PROD => 'https://api.yousign.com/users',
+    ];
+
+    const HOST_MAPPING_APP = [
+        self::DEMO => 'https://staging-app.yousign.com',
+        self::PROD => 'https://app.yousign.com/users',
     ];
 
     /**
@@ -43,6 +48,14 @@ class Environment
      */
     public function getHost()
     {
-        return static::HOST_MAPPING[$this->environment];
+        return static::HOST_MAPPING_API[$this->environment];
+    }
+
+    /**
+     * @return string
+     */
+    public function getAppHost()
+    {
+        return static::HOST_MAPPING_APP[$this->environment];
     }
 }
