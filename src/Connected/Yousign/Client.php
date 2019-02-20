@@ -13,25 +13,20 @@ use GuzzleHttp\Client as GuzzleClient;
  * @package Yousign
  *
  * @method getUsers
- *
- * @method connect
- * @method initCosign
- * @method getCosignedFilesFromDemand
- * @method getInfosFromCosignatureDemand
- * @method getListCosign
- * @method cancelCosignatureDemand
- * @method alertCosigners
- * @method isPDFSignable
- * @method updateCosigner
- * @method archive
- * @method getArchive
- * @method getCompleteArchive
+ * @method getUser
+ * @method updateUser
+ * @method getProcedures
+ * @method getProcedure
+ * @method newProcedure
+ * @method updateProcedure
+ * @method newFile
+ * @method newMember
+ * @method newFileObject
  */
 class Client
 {
-    const RESPONSE_OK = [
-        200, 201
-    ];
+    const RESPONSE_OK = [200, 201];
+    const SIGN_MEMBER_URI = '/procedure/sign?members=';
 
     const METHODS = [
         'getUsers' => [
@@ -52,7 +47,6 @@ class Client
             'params' => ['id'],
             'suffix' => '/{id}'
         ],
-
         'getProcedures' => [
             'endpoint' => Endpoint::PROCEDURE,
             'verb' => Endpoint::VERB_GET,
@@ -77,7 +71,6 @@ class Client
             'params' => ['id'],
             'suffix' => '/{id}'
         ],
-
         'newFile' => [
             'endpoint' => Endpoint::FILE,
             'verb' => Endpoint::VERB_POST,
@@ -90,35 +83,42 @@ class Client
             'params' => null,
             'suffix' => null
         ],
+        'newFileObject' => [
+            'endpoint' => Endpoint::FILE_OBJECT,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
     ];
 
-    const SIGN_MEMBER_URI = '/procedure/sign?members=';
-
+    /**
+     * @var GuzzleClient
+     */
     protected $restClient;
 
+    /**
+     * @var string
+     */
     protected $uri;
+
+    /**
+     * @var string
+     */
     protected $appUri;
 
     /**
-     * @var array
-     */
-    private $clients = array();
-
-    /**
-     * @param $method
-     * @param $arguments
-     * @return \stdClass
+     * @param $method The method to call
+     * @param $arguments The arguments (body, routeParams)
+     * @return string Json response
      * @throws NotFoundServiceException
      * @throws UnknownClientException
+     * @throws NotAllowedMethodException
      */
     public function __call($method, $arguments)
     {
         $body = $arguments[0] ?? null;
         $body = $body ? json_encode($body) : null;
         $routeParams = $arguments[1] ?? null;
-
-        // dump($routeParams);
-        // dump($body);
 
         if (!array_key_exists($method, static::METHODS)) {
             throw new NotFoundServiceException($method);
@@ -133,23 +133,18 @@ class Client
         $verb = $method['verb'];
         $endpoint = $method['endpoint'];
 
+        // Check if method is allowed on the given endpoint
         if (Endpoint::isEndpointVerbAllowed($endpoint, $verb) === false) {
             throw new NotAllowedMethodException($endpoint, $method);
         }
 
-
-        // Check du body requis sur un POST ou PUT
+        // Check if body is given in case of POST or PUT request
         if (($verb === Endpoint::VERB_POST || $verb === Endpoint::VERB_PUT) && is_null($body)) {
             throw new \Exception(sprintf('Body cannot be null when using verb %s', $verb), 500);
         }
 
-
-        // Vérification des arguments
+        // Check params number and name
         $methodParams = $method['params'];
-
-        // if ($routeParams !== null && (count($routeParams) !== count($methodParams))) {
-        //     throw new \Exception('Invalid parameter number', 500);
-        // }
 
         if ($routeParams !== null) {
             if (count($routeParams) !== count($methodParams)) {
@@ -163,25 +158,23 @@ class Client
             }
         }
 
-
-        // Building URI with params binding
+        // Building URI
         $uri = $method['endpoint'];
         $uri.= $method['suffix'];
-        // $uri = $method['endpoint'] . $method['suffix'];
+
+        // URI param binding
         if ($methodParams) {
             foreach ($method['params'] as $key => $param) {
                 $uri = str_replace('{'.$param.'}', $routeParams[$param], $uri);
             }
         }
-        // dump($uri);die;
+
         $response = $restClient->request($verb, $uri, ['body' => $body]);
         if (in_array($response->getStatusCode(), static::RESPONSE_OK)) {
             $content = json_decode($response->getBody()->getContents(), true);
-            // dd($response->getBody()->getContents());
         } else {
             throw new \Exception('Error Processing Request', 500);
         }
-
 
         return $content;
     }
@@ -205,11 +198,18 @@ class Client
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getUri()
     {
         return $this->uri;
     }
 
+    /**
+     * @param string
+     * @return self
+     */
     public function setUri($uri)
     {
         $this->uri = $uri;
@@ -217,11 +217,18 @@ class Client
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getAppUri()
     {
         return $this->appUri;
     }
 
+    /**
+     * @param string
+     * @return self
+     */
     public function setAppUri($appUri)
     {
         $this->appUri = $appUri;
@@ -229,6 +236,9 @@ class Client
         return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getMemberSignUri($param)
     {
         return $this->getAppUri() . self::SIGN_MEMBER_URI . $param;
