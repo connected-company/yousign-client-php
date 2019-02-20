@@ -2,6 +2,7 @@
 
 namespace Connected\Yousign;
 
+use Connected\Yousign\Exception\NotAllowedMethodException;
 use Connected\Yousign\Exception\NotFoundServiceException;
 use Connected\Yousign\Exception\UnknownClientException;
 use GuzzleHttp\Client as GuzzleClient;
@@ -11,160 +12,235 @@ use GuzzleHttp\Client as GuzzleClient;
  *
  * @package Yousign
  *
- * @method connect
- * @method initCosign
- * @method getCosignedFilesFromDemand
- * @method getInfosFromCosignatureDemand
- * @method getListCosign
- * @method cancelCosignatureDemand
- * @method alertCosigners
- * @method isPDFSignable
- * @method updateCosigner
- * @method archive
- * @method getArchive
- * @method getCompleteArchive
+ * @method getUsers
+ * @method getUser
+ * @method updateUser
+ * @method getProcedures
+ * @method getProcedure
+ * @method newProcedure
+ * @method updateProcedure
+ * @method newFile
+ * @method newMember
+ * @method newFileObject
  */
 class Client
 {
+    const RESPONSE_OK = [200, 201];
+    const SIGN_MEMBER_URI = '/procedure/sign?members=';
+
     const METHODS = [
         'getUsers' => [
             'endpoint' => Endpoint::USER,
-            'method' => Endpoint::METHOD_GET,
+            'verb' => Endpoint::VERB_GET,
             'params' => null,
             'suffix' => null
         ],
-
+        'getUser' => [
+            'endpoint' => Endpoint::USER,
+            'verb' => Endpoint::VERB_GET,
+            'params' => ['id'],
+            'suffix' => '/{id}'
+        ],
+        'updateUser' => [
+            'endpoint' => Endpoint::USER,
+            'verb' => Endpoint::VERB_PUT,
+            'params' => ['id'],
+            'suffix' => '/{id}'
+        ],
         'getProcedures' => [
             'endpoint' => Endpoint::PROCEDURE,
-            'method' => Endpoint::METHOD_GET,
-            'params' => null,
-            'suffix' => null
-        ],
-        'newProcedure' => [
-            'endpoint' => Endpoint::PROCEDURE,
-            'method' => Endpoint::METHOD_POST,
+            'verb' => Endpoint::VERB_GET,
             'params' => null,
             'suffix' => null
         ],
         'getProcedure' => [
             'endpoint' => Endpoint::PROCEDURE,
-            'method' => Endpoint::METHOD_GET,
-            'params' => 'id',
+            'verb' => Endpoint::VERB_GET,
+            'params' => ['id'],
+            'suffix' => '/{id}'
+        ],
+        'newProcedure' => [
+            'endpoint' => Endpoint::PROCEDURE,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
+        'updateProcedure' => [
+            'endpoint' => Endpoint::PROCEDURE,
+            'verb' => Endpoint::VERB_PUT,
+            'params' => ['id'],
+            'suffix' => '/{id}'
+        ],
+        'newFile' => [
+            'endpoint' => Endpoint::FILE,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
+        'newMember' => [
+            'endpoint' => Endpoint::MEMBER,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
+        'newFileObject' => [
+            'endpoint' => Endpoint::FILE_OBJECT,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
             'suffix' => null
         ],
     ];
 
     /**
-     * @var \SoapClient
+     * @var GuzzleClient
      */
-    private $last_client = null;
+    protected $restClient;
 
     /**
-     * @var array
+     * @var string
      */
-    private $methods_mapping = array (
-        // Authent
-        'connect' => Services::AUTHENTICATION,
-
-        // Cosignature
-        'initCosign' => Services::COSIGNATURE,
-        'getCosignedFilesFromDemand' => Services::COSIGNATURE,
-        'getInfosFromCosignatureDemand' => Services::COSIGNATURE,
-        'getListCosign' => Services::COSIGNATURE,
-        'cancelCosignatureDemand' => Services::COSIGNATURE,
-        'alertCosigners' => Services::COSIGNATURE,
-        'isPDFSignable' => Services::COSIGNATURE,
-        'updateCosigner' => Services::COSIGNATURE,
-
-        // Archivage
-        'archive' => Services::ARCHIVE,
-        'getArchive' => Services::ARCHIVE,
-        'getCompleteArchive' => Services::ARCHIVE,
-    );
+    protected $uri;
 
     /**
-     * @var array
+     * @var string
      */
-    private $clients = array();
+    protected $appUri;
 
     /**
-     * @param $name
-     * @param $arguments
-     * @return \stdClass
+     * @param $method The method to call
+     * @param $arguments The arguments (body, routeParams)
+     * @return string Json response
      * @throws NotFoundServiceException
      * @throws UnknownClientException
+     * @throws NotAllowedMethodException
      */
-    public function __call($name, $arguments)
+    public function __call($method, $arguments)
     {
-        if (!isset($this->methods_mapping[$name])) {
-            throw new NotFoundServiceException($name);
+        $body = $arguments[0] ?? null;
+        $body = $body ? json_encode($body) : null;
+        $routeParams = $arguments[1] ?? null;
+
+        if (!array_key_exists($method, static::METHODS)) {
+            throw new NotFoundServiceException($method);
         }
 
-        $service = $this->methods_mapping[$name];
-        $client = $this->getSoapClient($service);
-        if (!($client instanceof \SoapClient)) {
-            throw new UnknownClientException($name);
+        $restClient = $this->getRestClient();
+        if (($restClient instanceof GuzzleClient) === false) {
+            throw new UnknownClientException($method);
         }
 
-        $this->last_client = $client;
+        $method = static::METHODS[$method];
+        $verb = $method['verb'];
+        $endpoint = $method['endpoint'];
 
-        return $client->__call($name, $arguments)->return;
+        // Check if method is allowed on the given endpoint
+        if (Endpoint::isEndpointVerbAllowed($endpoint, $verb) === false) {
+            throw new NotAllowedMethodException($endpoint, $method);
+        }
+
+        // Check if body is given in case of POST or PUT request
+        if (($verb === Endpoint::VERB_POST || $verb === Endpoint::VERB_PUT) && is_null($body)) {
+            throw new \Exception(sprintf('Body cannot be null when using verb %s', $verb), 500);
+        }
+
+        // Check params number and name
+        $methodParams = $method['params'];
+
+        if ($routeParams !== null) {
+            if (count($routeParams) !== count($methodParams)) {
+                throw new \Exception('Invalid parameter number', 500);
+            }
+
+            foreach ($routeParams as $key => $routeParam) {
+                if (in_array($key, $methodParams) === false) {
+                    throw new \Exception('Invalid param', 500);
+                }
+            }
+        }
+
+        // Building URI
+        $uri = $method['endpoint'];
+        $uri.= $method['suffix'];
+
+        // URI param binding
+        if ($methodParams) {
+            foreach ($method['params'] as $key => $param) {
+                $uri = str_replace('{'.$param.'}', $routeParams[$param], $uri);
+            }
+        }
+
+        $response = $restClient->request($verb, $uri, ['body' => $body]);
+        if (in_array($response->getStatusCode(), static::RESPONSE_OK)) {
+            $content = json_decode($response->getBody()->getContents(), true);
+        } else {
+            throw new \Exception('Error Processing Request', 500);
+        }
+
+        return $content;
     }
 
     /**
-     * @param $name
-     * @param \SoapClient $client
-     * @return $this
-     * @throws \RuntimeException
+     * @return GuzzleClient
      */
-    public function addSoapClient($name, \SoapClient $client)
+    public function getRestClient()
     {
-        if (empty($name)) {
-            throw new \RuntimeException('Please given name to your Soap client');
-        }
+        return $this->restClient;
+    }
 
-        $this->clients[$name] = $client;
+    /**
+     * @param GuzzleClient $restClient
+     * @return self
+     */
+    public function setRestClient(GuzzleClient $restClient)
+    {
+        $this->restClient = $restClient;
 
         return $this;
     }
 
     /**
-     * @param $name
-     * @return $this
+     * @return string
      */
-    public function removeSoapClient($name)
+    public function getUri()
     {
-        if (isset($this->clients[$name])) {
-            unset($this->clients[$name]);
-        }
+        return $this->uri;
+    }
+
+    /**
+     * @param string
+     * @return self
+     */
+    public function setUri($uri)
+    {
+        $this->uri = $uri;
 
         return $this;
     }
 
     /**
-     * @param $name
-     * @return mixed|null
+     * @return string
      */
-    public function getSoapClient($name)
+    public function getAppUri()
     {
-        return isset($this->clients[$name]) ?
-            $this->clients[$name] : null;
+        return $this->appUri;
     }
 
     /**
-     * @param $name
-     * @return bool
+     * @param string
+     * @return self
      */
-    public function hasSoapClient($name)
+    public function setAppUri($appUri)
     {
-        return $this->getSoapClient($name) !== null;
+        $this->appUri = $appUri;
+
+        return $this;
     }
 
     /**
-     * @return \SoapClient
+     * @return string
      */
-    public function getLastClient()
+    public function getMemberSignUri($param)
     {
-        return $this->last_client;
+        return $this->getAppUri() . self::SIGN_MEMBER_URI . $param;
     }
 }

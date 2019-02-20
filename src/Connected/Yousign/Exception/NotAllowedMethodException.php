@@ -2,7 +2,7 @@
 
 namespace Connected\Yousign\Exception;
 
-class MethodNotAllowedException extends \Exception
+class NotAllowedMethodException extends \Exception
 {
     /**
      * @param string $endpoint
