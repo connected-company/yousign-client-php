@@ -25,7 +25,7 @@ use GuzzleHttp\Client as GuzzleClient;
  */
 class Client
 {
-    const RESPONSE_OK = [200, 201];
+    const RESPONSE_OK = [200, 201, 202, 204];
     const SIGN_MEMBER_URI = '/procedure/sign?members=';
 
     const METHODS = [
@@ -68,6 +68,12 @@ class Client
         'updateProcedure' => [
             'endpoint' => Endpoint::PROCEDURE,
             'verb' => Endpoint::VERB_PUT,
+            'params' => ['id'],
+            'suffix' => '/{id}'
+        ],
+        'deleteProcedure' => [
+            'endpoint' => Endpoint::PROCEDURE,
+            'verb' => Endpoint::VERB_DELETE,
             'params' => ['id'],
             'suffix' => '/{id}'
         ],
