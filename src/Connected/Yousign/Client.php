@@ -83,6 +83,12 @@ class Client
             'params' => null,
             'suffix' => null
         ],
+        'downloadFile' => [
+            'endpoint' => Endpoint::FILE,
+            'verb' => Endpoint::VERB_GET,
+            'params' => ['id'],
+            'suffix' => '/{id}/download'
+        ],
         'newMember' => [
             'endpoint' => Endpoint::MEMBER,
             'verb' => Endpoint::VERB_POST,
