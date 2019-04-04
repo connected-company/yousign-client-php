@@ -16,12 +16,12 @@ class Environment
 
     const HOST_MAPPING_API = [
         self::DEMO => 'https://staging-api.yousign.com',
-        self::PROD => 'https://api.yousign.com/users',
+        self::PROD => 'https://api.yousign.com',
     ];
 
     const HOST_MAPPING_APP = [
         self::DEMO => 'https://staging-app.yousign.com',
-        self::PROD => 'https://app.yousign.com/users',
+        self::PROD => 'https://app.yousign.com',
     ];
 
     /**

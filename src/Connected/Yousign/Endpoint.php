@@ -50,6 +50,7 @@ class Endpoint
         self::FILE => [self::VERB_GET, self::VERB_POST],
         self::MEMBER => [self::VERB_GET, self::VERB_POST, self::VERB_PUT, self::VERB_DELETE],
         self::FILE_OBJECT => [self::VERB_GET, self::VERB_POST, self::VERB_PUT, self::VERB_DELETE],
+        self::SIGNATURE_UI => [self::VERB_GET, self::VERB_POST, self::VERB_PUT, self::VERB_DELETE],
     ];
 
     /**

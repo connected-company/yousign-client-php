@@ -101,6 +101,12 @@ class Client
             'params' => null,
             'suffix' => null
         ],
+        'newSignatureUi' => [
+            'endpoint' => Endpoint::SIGNATURE_UI,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
     ];
 
     /**
