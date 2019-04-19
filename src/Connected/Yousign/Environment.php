@@ -21,7 +21,7 @@ class Environment
 
     const HOST_MAPPING_APP = [
         self::DEMO => 'https://staging-app.yousign.com',
-        self::PROD => 'https://app.yousign.com',
+        self::PROD => 'https://webapp.yousign.com',
     ];
 
     /**
