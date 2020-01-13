@@ -255,10 +255,15 @@ class Client
     }
 
     /**
+     * @param string
+     * @param array
      * @return string
      */
-    public function getMemberSignUri($param)
+    public function getMemberSignUri($membersId, array $params = null)
     {
-        return $this->getAppUri() . self::SIGN_MEMBER_URI . $param;
+        if ( !empty($params) ) {
+            $params = '&' . http_build_query($params);
+        }
+        return $this->getAppUri() . self::SIGN_MEMBER_URI . $membersId . $params;
     }
 }
