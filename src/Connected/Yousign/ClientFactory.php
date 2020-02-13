@@ -37,7 +37,7 @@ class ClientFactory
 
         $guzzleClient = new GuzzleClient([
             'base_uri' => $this->environment->getHost(),
-            'timeout' => 10.0,
+            'timeout' => $this->environment->getCurlTimeOut(),
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->authentication->getToken(),

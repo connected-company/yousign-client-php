@@ -30,17 +30,24 @@ class Environment
     private $environment;
 
     /**
+     * @var int number de seconde de timeout pour le client guzzle
+     */
+    private $curlTimeOut;
+
+    /**
      * Environment constructor.
      * @param null $environment
+     * @param null $curlTimeOut
      * @throws EnvironmentException
      */
-    public function __construct($environment = null)
+    public function __construct($environment = null, $curlTimeOut = 10.0)
     {
         if (in_array($environment, static::HOSTS) === false) {
             throw new EnvironmentException($environment);
         }
 
         $this->environment = $environment;
+        $this->curlTimeOut = sprintf("%.1f", $curlTimeOut);
     }
 
     /**
@@ -49,6 +56,14 @@ class Environment
     public function getHost()
     {
         return static::HOST_MAPPING_API[$this->environment];
+    }
+
+    /**
+     * @return float
+     */
+    public function getCurlTimeOut()
+    {
+        return $this->curlTimeOut;
     }
 
     /**
