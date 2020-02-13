@@ -37,17 +37,17 @@ class Environment
     /**
      * Environment constructor.
      * @param null $environment
-     * @param null $curlTimeOut
+     * @param int|null $curlTimeOut
      * @throws EnvironmentException
      */
-    public function __construct($environment = null, $curlTimeOut = 10.0)
+    public function __construct($environment = null, $curlTimeOut = 10)
     {
         if (in_array($environment, static::HOSTS) === false) {
             throw new EnvironmentException($environment);
         }
 
         $this->environment = $environment;
-        $this->curlTimeOut = sprintf("%.1f", $curlTimeOut);
+        $this->curlTimeOut = $curlTimeOut;
     }
 
     /**
