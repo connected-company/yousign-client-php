@@ -114,6 +114,18 @@ class Client
             'params' => null,
             'suffix' => null
         ],
+        'archiveDocument' => [
+            'endpoint' => Endpoint::ARCHIVE,
+            'verb' => Endpoint::VERB_POST,
+            'params' => null,
+            'suffix' => null
+        ],
+        'downloadDocument' => [
+            'endpoint' => Endpoint::ARCHIVE,
+            'verb' => Endpoint::VERB_GET,
+            'params' => null,
+            'suffix' => null
+        ],
     ];
 
     /**
