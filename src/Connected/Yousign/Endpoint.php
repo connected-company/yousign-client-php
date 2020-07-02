@@ -18,6 +18,7 @@ class Endpoint
     const SERVER_STAMP = 'server_stamps';
     const CONSENT_PROCESSE = 'consent_processes';
     const CONSENT_PROCESS_VALUE = 'consent_process_values';
+    const ARCHIVE = 'archives';
 
     const VERB_GET = 'GET';
     const VERB_POST = 'POST';
@@ -40,6 +41,7 @@ class Endpoint
         self::SERVER_STAMP,
         self::CONSENT_PROCESSE,
         self::CONSENT_PROCESS_VALUE,
+        self::ARCHIVE,
     ];
 
     const ALLOWED_ENDPOINTS_VERBS = [
@@ -52,6 +54,7 @@ class Endpoint
         self::FILE_OBJECT => [self::VERB_GET, self::VERB_POST, self::VERB_PUT, self::VERB_DELETE],
         self::SIGNATURE_UI => [self::VERB_GET, self::VERB_POST, self::VERB_PUT, self::VERB_DELETE],
         self::CONSENT_PROCESSE => [self::VERB_POST],
+        self::ARCHIVE => [self::VERB_GET, self::VERB_POST],
     ];
 
     /**
