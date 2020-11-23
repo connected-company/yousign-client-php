@@ -120,6 +120,12 @@ class Client
             'params' => null,
             'suffix' => null
         ],
+        'getUserProof' => [
+            'endpoint' => Endpoint::USER,
+            'verb' => Endpoint::VERB_GET,
+            'params' => ['id', 'format'],
+            'suffix' => '/{id}/proof?format={format}'
+        ],
     ];
 
     /**
