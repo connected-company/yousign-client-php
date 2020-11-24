@@ -121,7 +121,7 @@ class Client
             'suffix' => null
         ],
         'getUserProof' => [
-            'endpoint' => Endpoint::USER,
+            'endpoint' => Endpoint::MEMBER,
             'verb' => Endpoint::VERB_GET,
             'params' => ['id', 'format'],
             'suffix' => '/{id}/proof?format={format}'
